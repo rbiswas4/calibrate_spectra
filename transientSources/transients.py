@@ -51,6 +51,7 @@ class TransientObject(object):
         self.mangled_spectra = np.array(matched_spectra)[self.sortOrder]
         self.mjds = np.array(days)[self.sortOrder]
         
+        # Check that the mangled spectra pass certain consistency checks
         self.validateWavelengths()
         
         
@@ -72,8 +73,11 @@ class TransientObject(object):
         
         
             
-        return cls(spectral_data=spectral_data, matched_spectra=matched_spectra, days=days,
-                   data_fnames=spectralDataFname, mangled_fnames=mangledDataFname) 
+        return cls(spectral_data=spectral_data,
+                   matched_spectra=matched_spectra,
+                   days=days,
+                   data_fnames=spectralDataFname,
+                   mangled_fnames=mangledDataFname) 
             
     @staticmethod    
     def parse_mjds(mangledSpectraFileName):
@@ -101,3 +105,26 @@ class TransientObject(object):
             else:
                 if verbose:
                     print '0 ', i , ' match!'
+
+    @property
+    def SNCosmoSource(self):
+
+        import sncosmo
+
+
+        fluxarray = np.zeros(shape=(len(self.mjds),
+                                    len(self.mangled_spectra[0])))
+
+        for i, fluxdata in enumerate(self.mangled_spectra):
+            fluxarray[i] = fluxdata[:, 1]
+
+        _ = sncosmo.TimeSeriesSource(phase=self.mjds,
+                                     wave=self.mangled_spectra[0][:, 0],
+                                     flux=fluxarray) 
+        peak = _.peakphase('bessellB')
+
+        ts = sncosmo.TimeSeriesSource(phase=self.mjds - peak,
+                                      wave=self.mangled_spectra[0][:, 0],
+                                      flux=fluxarray)
+
+        return ts
