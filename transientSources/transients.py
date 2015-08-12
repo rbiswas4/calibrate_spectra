@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+import numpy as np
+import glob
+import sncosmo
 """
 Constructing objects representing a single astrophysical source with spectra
 taken on a certain number of days with photometry on at least the same ?24? hour
@@ -8,6 +12,7 @@ have been by N. Karpenka, and form the basis for this study
  
 
 class TransientObject(object):
+
     def __init__(self,
                  spectral_data,
                  matched_spectra,
