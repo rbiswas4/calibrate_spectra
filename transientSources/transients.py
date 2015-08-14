@@ -14,6 +14,7 @@ have been by N. Karpenka, and form the basis for this study
 class TransientObject(object):
 
     def __init__(self,
+                 name, 
                  spectral_data,
                  matched_spectra,
                  days,
@@ -24,6 +25,9 @@ class TransientObject(object):
         
         Parameters
         ----------
+        name: string, mandatory
+            name of the source, convention is author/compilation/code hyphen
+            IAU name
         spectral_data: list of 2-D `np.ndarray` of floats
             list of all the spectral data available corresponding to the object.
             Each `np.ndarray` has columns of wavelength and specific flux in
@@ -48,7 +52,8 @@ class TransientObject(object):
         wavelengths in the matched spectra are assumed to be in increasing
         order.
         """
-        
+
+        self.name = name        
         self.sortOrder = np.argsort(days)
         self.data_fnames = data_fnames[self.sortOrder]
         self.mangled_fnames = mangled_fnames[self.sortOrder]
@@ -59,9 +64,8 @@ class TransientObject(object):
         # Check that the mangled spectra pass certain consistency checks
         self.validateWavelengths()
         
-        
     @classmethod
-    def fromDataDir(cls, spectralDataDir):
+    def fromDataDir(cls, name, spectralDataDir):
         """
         """
         import glob
@@ -78,7 +82,7 @@ class TransientObject(object):
         
         
             
-        return cls(spectral_data=spectral_data,
+        return cls(name=name, spectral_data=spectral_data,
                    matched_spectra=matched_spectra,
                    days=days,
                    data_fnames=spectralDataFname,
@@ -93,6 +97,14 @@ class TransientObject(object):
         day = s.split('_')[-1]
         return float(day)
     
+    @property
+    def phasePeak(self):
+        return self._phasePeak
+
+    @phasePeak.setter
+    def phasePeak(self, value):
+                self._phasePeak = value
+
     def validateWavelengths(self, verbose=False):
         """
         Check that the wavelength grid of the `self.matched_spectra
@@ -111,11 +123,14 @@ class TransientObject(object):
                 if verbose:
                     print '0 ', i , ' match!'
 
+    def get_Photometry(self, name):
+        data = None
+        return data
     @property
     def SNCosmoSource(self):
 
-        import sncosmo
 
+        import sncosmo
 
         fluxarray = np.zeros(shape=(len(self.mjds),
                                     len(self.mangled_spectra[0])))
@@ -128,8 +143,9 @@ class TransientObject(object):
                                      flux=fluxarray) 
         peak = _.peakphase('bessellB')
 
-        ts = sncosmo.TimeSeriesSource(phase=self.mjds - peak,
+        ts = sncosmo.TimeSeriesSource(phase=self.mjds - self.peakphase,
                                       wave=self.mangled_spectra[0][:, 0],
-                                      flux=fluxarray)
+                                      flux=fluxarray,
+                                      name=self.name)
 
         return ts
