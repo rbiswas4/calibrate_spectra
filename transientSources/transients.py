@@ -124,18 +124,35 @@ class TransientObject(object):
                 if verbose:
                     print '0 ', i, ' match!'
 
-    def get_Photometry(self, dataDir, filterList=[]):
+    @staticmethod
+    def photometryTable(fname, filt):
+        from astropy.table import Table
+        from astropy.io import ascii
+        data = ascii.read(fname, names=['time', 'flux', 'fluxerr'])
+        data['band'] = filt
+
+        return data
+
+
+    def getPhotometry(self, dataDir, filterList=[]):
         """
 
         """
         import os
         import glob
+        from astropy.table import vstack
 
+        photometryTables = []
         for filt in filterList:
             dirname = os.path.join(dataDir, filt)
-            data = glob.glob(dirname + '/*.dat')
-            print data
+            files = glob.glob(dirname + '/*.DAT')
+            for filename in files:
+                if '_mag' not in filename.lower():
+                    # This is out file
+                    photometryTables.append(self.photometryTable(filename,
+                                                                 filt))
 
+        data = vstack(photometryTables) 
         return data
 
     @property
