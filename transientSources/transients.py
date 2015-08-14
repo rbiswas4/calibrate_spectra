@@ -60,6 +60,7 @@ class TransientObject(object):
         self.spectral_data = np.array(spectral_data)[self.sortOrder]
         self.mangled_spectra = np.array(matched_spectra)[self.sortOrder]
         self.mjds = np.array(days)[self.sortOrder]
+        self._phasePeak = None
         
         # Check that the mangled spectra pass certain consistency checks
         self.validateWavelengths()
@@ -101,9 +102,9 @@ class TransientObject(object):
     def phasePeak(self):
         return self._phasePeak
 
-    @phasePeak.setter
-    def phasePeak(self, value):
-                self._phasePeak = value
+    # @phasePeak.setter
+    def setphasePeak(self, value):
+        self._phasePeak = value
 
     def validateWavelengths(self, verbose=False):
         """
@@ -121,11 +122,22 @@ class TransientObject(object):
                 print 'Different values for ', 0, i
             else:
                 if verbose:
-                    print '0 ', i , ' match!'
+                    print '0 ', i, ' match!'
 
-    def get_Photometry(self, name):
-        data = None
+    def get_Photometry(self, dataDir, filterList=[]):
+        """
+
+        """
+        import os
+        import glob
+
+        for filt in filterList:
+            dirname = os.path.join(dataDir, filt)
+            data = glob.glob(dirname + '/*.dat')
+            print data
+
         return data
+
     @property
     def SNCosmoSource(self):
 
@@ -137,13 +149,14 @@ class TransientObject(object):
 
         for i, fluxdata in enumerate(self.mangled_spectra):
             fluxarray[i] = fluxdata[:, 1]
+        if self.phasePeak is None:
+            _ = sncosmo.TimeSeriesSource(phase=self.mjds,
+                                         wave=self.mangled_spectra[0][:, 0],
+                                         flux=fluxarray) 
+            peak = _.peakphase('bessellB')
+            self.setphasePeak(peak)
 
-        _ = sncosmo.TimeSeriesSource(phase=self.mjds,
-                                     wave=self.mangled_spectra[0][:, 0],
-                                     flux=fluxarray) 
-        peak = _.peakphase('bessellB')
-
-        ts = sncosmo.TimeSeriesSource(phase=self.mjds - self.peakphase,
+        ts = sncosmo.TimeSeriesSource(phase=self.mjds - self.phasePeak,
                                       wave=self.mangled_spectra[0][:, 0],
                                       flux=fluxarray,
                                       name=self.name)
