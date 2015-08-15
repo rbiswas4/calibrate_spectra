@@ -125,11 +125,19 @@ class TransientObject(object):
                     print '0 ', i, ' match!'
 
     @staticmethod
-    def photometryTable(fname, filt):
+    def photometryTable(fname, filt, filterDict=None):
         from astropy.table import Table
         from astropy.io import ascii
+
+        if filterDict is None:
+            filterDict = dict()
+            filterDict['B'] = 'bessellB'
+            filterDict['V'] = 'bessellV'
+            filterDict['r'] = 'bessellR'
+            filterDict['i'] = 'bessellI'
+
         data = ascii.read(fname, names=['time', 'flux', 'fluxerr'])
-        data['band'] = filt
+        data['band'] = filterDict[filt]
 
         return data
 
@@ -152,7 +160,10 @@ class TransientObject(object):
                     photometryTables.append(self.photometryTable(filename,
                                                                  filt))
 
-        data = vstack(photometryTables) 
+        if len(photometryTables) > 1:
+            data = vstack(photometryTables) 
+        else:
+            data = photometryTables[0]
         return data
 
     @property
