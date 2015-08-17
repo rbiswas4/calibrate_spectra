@@ -16,6 +16,7 @@ setup(# package information
                                         'example_data/2007uy/B/*',
                                         'example_data/2007uy/V/*',
                                         'example_data/2007uy/i/*',
-                                        'example_data/2007uy/r/*']
+                                        'example_data/2007uy/r/*',
+                                        'example_data/filters/*']
                    }
       )
